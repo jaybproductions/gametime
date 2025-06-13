@@ -1,0 +1,67 @@
+# === Java / Eclipse ===
+*.class
+*.log
+*.jar
+*.war
+*.ear
+
+# Compiled class files
+/bin/
+/build/
+
+# Eclipse project files
+*.launch
+*.classpath
+*.project
+.settings/
+
+# Mac system files
+.DS_Store
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# VS Code (if ever used)
+.vscode/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Generated files
+target/
+out/
+gen/
+
+# IDE backup files
+*.bak
+*.orig
+
+# === Game-specific ===
+# Ignore screenshots, frame dumps, or large assets you don't want to version
+*.png
+*.jpg
+*.jpeg
+*.mp4
+*.wav
+*.ogg
+*.zip
+
+# Ignore custom build cache if any
+.cache/
+.idea/
+
+# Optional: exclude libraries you add manually
+lib/
+libs/
+
+# Optional: exclude OS-specific files
+*.exe
+*.dll
+*.so
