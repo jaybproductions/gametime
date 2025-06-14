@@ -116,12 +116,33 @@ public class Player extends GameObject {
             velY = 1.5f;  // limit downward fall speed while sliding
         }
 
-        // Now check if we're colliding with the ground
         if (checkVerticalCollision()) {
+            boolean landedOnOneWay = false;
             boolean hardLanding = !wasOnGround && velY > 1.5f;
 
-            while (checkVerticalCollision()) {
-                y -= Math.signum(velY);
+            // Check what tile we're landing on
+            int[][] map = dualWorld.getActiveWorld().getMap();
+            int feetRow = (int)((y + 32) / tileSize);
+            int left = (int)((x + 2) / tileSize);
+            int right = (int)((x + 30) / tileSize);
+
+            for (int col = left; col <= right; col++) {
+                if (feetRow >= 0 && feetRow < map.length && col >= 0 && col < map[0].length) {
+                    if (map[feetRow][col] == 2) {
+                        landedOnOneWay = true;
+                        break;
+                    }
+                }
+            }
+
+            if (landedOnOneWay && velY >= 0) {
+                // Snap to top of one-way platform surface
+                y = feetRow * tileSize + tileSize / 2f - 32;
+            } else {
+                // Normal solid tile collision resolution
+                while (checkVerticalCollision()) {
+                    y -= Math.signum(velY);
+                }
             }
 
             velY = 0;
@@ -184,12 +205,29 @@ public class Player extends GameObject {
 
     private boolean checkVerticalCollision() {
         int[][] map = dualWorld.getActiveWorld().getMap();
+        int left = (int)((x + 2) / tileSize);
+        int right = (int)((x + 30) / tileSize);
+        int top = (int)(y / tileSize);
+        int bottom = (int)((y + 31) / tileSize);
 
-        int left = (int)((x + 2) / tileSize), right = (int)((x + 30) / tileSize);
-        int top = (int)(y / tileSize), bottom = (int)((y + 31) / tileSize);
-        for (int row = top; row <= bottom; row++)
-            for (int col = left; col <= right; col++)
-                if (inBounds(row, col) && map[row][col] == 1) return true;
+        for (int row = top; row <= bottom; row++) {
+            for (int col = left; col <= right; col++) {
+                if (row < 0 || row >= map.length || col < 0 || col >= map[0].length) continue;
+
+                int tile = map[row][col];
+
+                if (tile == 1) return true;
+
+                if (tile == 2) {
+                    // Only collide if falling and just landing on the platform
+                    float playerFeet = y + 32;
+                    float tileTop = row * tileSize + tileSize / 2f;
+
+                    if (velY >= 0 && playerFeet <= tileTop + 2) return true;
+                }
+            }
+        }
+
         return false;
     }
 
@@ -246,7 +284,7 @@ public class Player extends GameObject {
 
                 if (tile == 2) {
                     float playerFeet = y + 32;
-                    float tileTop = footY * tileSize;
+                    float tileTop = footY * tileSize + tileSize / 2;
                     if (velY >= 0 && playerFeet <= tileTop + 5) return true;
                 }
             }
