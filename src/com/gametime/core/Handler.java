@@ -10,9 +10,10 @@ public class Handler {
     private final List<GameObject> objects = new ArrayList<>();
 
     public void update() {
-        for (GameObject obj : objects) {
-            obj.update();
-        }
+    	for (int i = objects.size() - 1; i >= 0; i--) {
+    	    GameObject obj = objects.get(i);
+    	    obj.update();
+    	}
     }
 
     public void render(Graphics g) {
