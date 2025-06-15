@@ -1,14 +1,18 @@
 package com.gametime.ui;
 
 import java.awt.*;
+
+import com.gametime.core.*;
 import com.gametime.objects.Player;
-import com.gametime.core.Game;
 
 public class HUD {
     private int maxHealth = 100;
     private int targetHealth = 100;
     private float displayHealth = 100; // For smooth lerping
     private final float lerpSpeed = 0.1f;
+    
+    private String statusMessage = null;
+    private int statusTimer = 0;
 
     private Player player; // ✅ Reference to player
 
@@ -21,10 +25,14 @@ public class HUD {
     }
 
     public void update() {
+    	
+        if (statusTimer > 0) statusTimer--;
+        else statusMessage = null;
+    	
         displayHealth += (targetHealth - displayHealth) * lerpSpeed;
     }
 
-    public void render(Graphics2D g2d) {
+    public void render(Graphics2D g2d, int screenHeight) {
         // --- Health Bar ---
         int healthBarWidth = 200;
         int healthBarHeight = 20;
@@ -52,7 +60,7 @@ public class HUD {
             int dashBarWidth = 100;
             int dashBarHeight = 10;
             int dashX = 20;
-            int dashY = Game.HEIGHT - 30;
+            int dashY = screenHeight - 30; // more reliable than Game.HEIGHT
 
             // Background
             g2d.setColor(Color.DARK_GRAY);
@@ -66,5 +74,16 @@ public class HUD {
             g2d.setColor(Color.WHITE);
             g2d.drawRoundRect(dashX, dashY, dashBarWidth, dashBarHeight, 6, 6);
         }
+        
+        if (statusMessage != null) {
+            g2d.setFont(new Font("Arial", Font.BOLD, 20));
+            g2d.setColor(Color.YELLOW);
+            g2d.drawString(statusMessage, 20, screenHeight - 40); // bottom left
+        }
+    }
+    
+    public void showStatus(String message, int durationFrames) {
+        this.statusMessage = message;
+        this.statusTimer = durationFrames;
     }
 }

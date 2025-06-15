@@ -39,6 +39,14 @@ public class Player extends GameObject {
     private final float dashSpeed = 12.0f;
 
     private int wallJumpCooldown = 0, wallJumpCooldownMax = 12;
+    
+    private int spikeCooldown = 0;
+    private int hurtTimer = 0;
+    
+    private int enemiesKilled = 0;
+    private int bulletCount = 0;
+
+
 
     public Player(float x, float y, HUD hud, DualWorld dualWorld, KeyInput input, Handler handler) {
         super(x, y, ID.PLAYER);
@@ -54,6 +62,10 @@ public class Player extends GameObject {
     public void update() {
         checkWallSlide();
         if (wallJumpCooldown > 0) wallJumpCooldown--;
+        if (spikeCooldown > 0) spikeCooldown--;
+        if (hurtTimer > 0) hurtTimer--;
+
+
 
         if (input.isJustPressed(KeyEvent.VK_SPACE)) {
             jumpBufferTimer = jumpBufferMax;
@@ -101,7 +113,7 @@ public class Player extends GameObject {
         // Jump buffering
         if (jumpBufferTimer > 0) jumpBufferTimer--;
 
-     // Gravity
+        // Gravity
         boolean wasOnGround = onGround();  // BEFORE y is updated
 
         y += velY;
@@ -178,6 +190,17 @@ public class Player extends GameObject {
             jumpBufferTimer = 0;
             coyoteTimer = 0;
         }
+        
+        
+        if (spikeCooldown == 0 && isTouchingSpike()) {
+            damage(10);
+            Game.instance.freeze(5);
+            Game.instance.getCamera().shake(6, 4);
+            spikeCooldown = 30;
+            hurtTimer = 30; // match the invincibility duration
+        }
+        
+        checkDeath();
 
         // Goal detection
         if (isTouchingGoalTile()) {
@@ -293,6 +316,34 @@ public class Player extends GameObject {
         return false;
     }
     
+    
+    private boolean isTouchingSpike() {
+        int[][] map = dualWorld.getActiveWorld().getMap();
+        int top = (int)(y / tileSize), bottom = (int)((y + 31) / tileSize);
+        int left = (int)(x / tileSize), right = (int)((x + 31) / tileSize);
+
+        for (int row = top; row <= bottom; row++) {
+            for (int col = left; col <= right; col++) {
+                if (row >= 0 && row < map.length && col >= 0 && col < map[0].length) {
+                    if (map[row][col] == 6) return true;
+                }
+            }
+        }
+
+        return false;
+    }
+    
+    public void checkDeath() {
+        if (health <= 0) {
+            System.out.println("Player died! Respawning...");
+            health = 100; // Reset health (or keep at 1 if you'd rather keep it harsh)
+            velX = velY = 0;     // Reset motion
+            setPosition(dualWorld.getActiveWorld().findSpawnPoint().x, 
+                        dualWorld.getActiveWorld().findSpawnPoint().y);
+            resetState();        // Reset dash cooldowns, flags, etc.
+        }
+    }
+    
     public void resetState() {
         velX = 0;
         velY = 0;
@@ -315,16 +366,39 @@ public class Player extends GameObject {
     public float getX() { return x; }
     public float getY() { return y; }
     public int getHealth() { return health; }
+    public void setHealth(int h) { health = h; }
+    public int getBulletCount() { return bulletCount; };
+    public void setBulletCount(int bullets) { bulletCount = bullets; };
+    public int getEnemiesKilled() { return enemiesKilled; };
+    public void setEnemiesKilled(int e) { enemiesKilled = e; }
 
     @Override
     public void render(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
+        Composite original = g2d.getComposite();
+
+        // Draw base sprite (white block)
         g2d.setColor(Color.WHITE);
         int drawX = (int)(x + 16 - (16 * scaleX));
         int drawY = (int)(y + 16 - (16 * scaleY));
         int drawW = (int)(32 * scaleX);
         int drawH = (int)(32 * scaleY);
         g2d.fillRect(drawX, drawY, drawW, drawH);
+
+        // Pulsing flash when hurt
+        if (hurtTimer > 0) {
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+
+            // Alternate red and white every 4 frames
+            if ((hurtTimer / 4) % 2 == 0) {
+                g2d.setColor(Color.RED);
+            } else {
+                g2d.setColor(Color.WHITE);
+            }
+
+            g2d.fillRect(drawX, drawY, drawW, drawH);
+            g2d.setComposite(original);
+        }
     }
 
     public void respawn() {

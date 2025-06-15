@@ -26,7 +26,7 @@ public class World {
 
     public void cycleTile(int x, int y) {
         if (y >= 0 && y < map.length && x >= 0 && x < map[0].length) {
-            int nextTile = (map[y][x] + 1) % 5;
+        	int nextTile = (map[y][x] + 1) % 7; // 0–6, including tile 6 ✅
 
             if (nextTile == 4) {
                 // Clear any existing spawn tile
@@ -55,6 +55,14 @@ public class World {
                 } else if (tile == 2) {
                     g2d.setColor(Color.LIGHT_GRAY);
                     g2d.fillRect(x, y + TILE_SIZE / 2, TILE_SIZE, TILE_SIZE / 2);
+                } else if (tile == 6) { // spikes
+                    g2d.setColor(Color.RED);
+                    int spikePadding = 6;
+                    g2d.fillPolygon(
+                        new int[]{x + spikePadding, x + TILE_SIZE / 2, x + TILE_SIZE - spikePadding},
+                        new int[]{y + TILE_SIZE, y + TILE_SIZE / 2, y + TILE_SIZE},
+                        3
+                    );
                 }
 
                 // Only show outlines in edit mode
@@ -64,6 +72,9 @@ public class World {
                         g2d.drawRect(x, y, TILE_SIZE, TILE_SIZE);
                     } else if (tile == 5) {
                         g2d.setColor(Color.YELLOW);
+                        g2d.drawRect(x, y, TILE_SIZE, TILE_SIZE);
+                    } else if (tile == 6) {
+                        g2d.setColor(Color.MAGENTA); // Or orange, red, etc.
                         g2d.drawRect(x, y, TILE_SIZE, TILE_SIZE);
                     }
                 }
@@ -83,6 +94,7 @@ public class World {
                 case 2 -> g2d.setColor(Color.LIGHT_GRAY);
                 case 4 -> g2d.setColor(Color.GREEN);  // Spawn
                 case 5 -> g2d.setColor(Color.YELLOW); // Goal
+                case 6 -> g2d.setColor(Color.MAGENTA); // for spike preview
                 default -> g2d.setColor(Color.RED);
             }
 
