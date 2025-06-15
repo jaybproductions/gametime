@@ -90,8 +90,7 @@ A 2D Java platformer with smooth movement, dual-layer reality switching, save/lo
 
 ## 📝 Credits
 
-Built by [Your Name or Team].  
-Special thanks to OpenAI's ChatGPT for development collaboration and architectural guidance.
+Built by Chris Blair.
 
 ---
 
