@@ -55,33 +55,37 @@ public class Game extends Canvas implements Runnable {
     private int loadedSlot = -1;
 
 
-    public Game() {
+    public Game(int slot) {
         Game.instance = this;
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setFocusable(true);
         requestFocusInWindow();
         setFocusTraversalKeysEnabled(false);
 
+        this.loadedSlot = slot;
+
         dualWorld = new DualWorld();
         levelManager = new LevelManager(dualWorld);
-        dualWorld.loadBothWorlds(levelManager.getLevelFilename());
+
+        GameState state = SaveManager.load(slot);
+        int levelToLoad = (state != null) ? state.level : 1;
+
+        levelManager.setLevel(levelToLoad);
+        levelManager.loadCurrentLevel();
 
         Point spawn = dualWorld.getActiveWorld().getFirstSolidTileBelow(100, 0);
+
         handler = new Handler();
         hud = new HUD();
         input = new KeyInput();
         camera = new Camera();
         saveMenu = new SaveMenu();
-        
-
 
         player = new Player(spawn.x, spawn.y, hud, dualWorld, input, handler);
         levelManager.setPlayer(player);
         hud.setPlayer(player);
         handler.addObject(player);
         camera.update(player);
-        
-
 
         realityIndicator = new RealityIndicator();
         levelIndicator = new LevelIndicator();
@@ -89,12 +93,10 @@ public class Game extends Canvas implements Runnable {
         Bullet bullet = new Bullet(0, 0, player, handler);
         handler.addObject(bullet);
         addKeyListener(input);
-        
-        GameState state = SaveManager.loadMostRecent();
-        System.out.println("state" + state);
+
         if (state != null) {
             loadState(state);
-            loadedSlot = state.slotNumber; // Save this for later
+            saveMenu.markSlotLoaded(slot);
         }
 
         addMouseListener(new MouseAdapter() {
@@ -127,10 +129,6 @@ public class Game extends Canvas implements Runnable {
             if (selectedTile > MAX_TILE_TYPE) selectedTile = 0;
             System.out.println("Selected Tile: " + selectedTile);
         });
-        
-        if (loadedSlot != -1) {
-            saveMenu.markSlotLoaded(loadedSlot);
-        }
     }
 
     public synchronized void start() {
@@ -190,12 +188,12 @@ public class Game extends Canvas implements Runnable {
                 inSaveMenu = false;
             }
         }
-
+        
         if (input.isJustPressed(KeyEvent.VK_F5)) {
-            int slot = saveMenu.getSelectedSlot();
-            SaveManager.save(GameState.fromGame(this, slot), slot);
-            hud.showStatus("Game saved to slot " + slot, 120);
-            saveMenu.markSlotLoaded(slot);
+            if (editMode) {
+                dualWorld.saveBothWorlds(levelManager.getLevelFilename());
+                hud.showStatus("Level saved to disk", 120);
+            }
         }
 
         if (input.isJustPressed(KeyEvent.VK_E) && glitchTimer == 0) {
@@ -215,15 +213,6 @@ public class Game extends Canvas implements Runnable {
         if (input.isJustPressed(KeyEvent.VK_TAB)) {
             editMode = !editMode;
             System.out.println("Edit Mode: " + (editMode ? "ON" : "OFF"));
-        }
-
-        if (editMode) {
-            if (input.isJustPressed(KeyEvent.VK_S)) {
-                dualWorld.saveBothWorlds(levelManager.getLevelFilename());
-            }
-            if (input.isJustPressed(KeyEvent.VK_L)) {
-                dualWorld.loadBothWorlds(levelManager.getLevelFilename());
-            }
         }
 
         if (input.isJustPressed(KeyEvent.VK_CLOSE_BRACKET)) {
@@ -342,6 +331,10 @@ public class Game extends Canvas implements Runnable {
         player.resetState();
 
         camera.update(player);
+        
+        // ✅ Auto-save
+        SaveManager.save(GameState.fromGame(this, loadedSlot), loadedSlot);
+        hud.showStatus("Game auto-saved", 120);
     }
 
     public void goToLevel(int levelIndex) {
@@ -356,6 +349,10 @@ public class Game extends Canvas implements Runnable {
         player.resetState();
 
         camera.update(player);
+        
+        // ✅ Auto-save
+        SaveManager.save(GameState.fromGame(this, loadedSlot), loadedSlot);
+        hud.showStatus("Game auto-saved", 120);
     }
 
     private boolean isCollidingWithSolidTiles(float x, float y, int[][] map) {

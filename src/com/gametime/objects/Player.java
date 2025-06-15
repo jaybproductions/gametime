@@ -208,7 +208,7 @@ public class Player extends GameObject {
             return;
         }
 
-        if (y > dualWorld.getActiveWorld().getMap().length * tileSize + 200) respawn();
+        if (y > dualWorld.getActiveWorld().getMap().length * tileSize + 200) respawnAtStart();
 
         hud.setHealth(health);
         scaleX += (1.0f - scaleX) * scaleRecoverRate;
